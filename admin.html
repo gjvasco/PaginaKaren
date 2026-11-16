@@ -136,14 +136,21 @@
             <label for="post-kind">Tipo de publicación</label>
             <select id="post-kind">
               <option value="escrito">Escrito / Artículo</option>
-              <option value="video_archivo">Video propio (subir archivo MP4/MOV)</option>
+              <option value="video_youtube">Video de YouTube (público o privado con pago)</option>
               <option value="video_instagram">Video o Reel de Instagram (pegar enlace)</option>
+              <option value="video_archivo">Video propio (subir archivo MP4/MOV)</option>
             </select>
           </div>
 
           <div class="field">
             <label for="post-summary">Resumen corto (se muestra en la tarjeta)</label>
             <input id="post-summary" type="text" required placeholder="Breve descripción de 1 o 2 líneas">
+          </div>
+
+          <div class="field" id="field-yt-url" style="display:none">
+            <label for="post-yt-url">Enlace de YouTube</label>
+            <input id="post-yt-url" type="url" placeholder="https://www.youtube.com/watch?v=...">
+            <small style="color:var(--muted)">Si es un video privado de pago, puedes dejar este campo vacío (el acceso se entrega por WhatsApp tras el pago).</small>
           </div>
 
           <div class="field" id="field-ig-url" style="display:none">
@@ -155,6 +162,16 @@
             <label for="post-video-file">Archivo de video propio</label>
             <input id="post-video-file" type="file" accept="video/*">
             <small id="current-video-note" style="color:var(--muted)"></small>
+          </div>
+
+          <div class="field" style="display:flex;align-items:center;gap:10px">
+            <input id="post-is-paid" type="checkbox" style="width:auto">
+            <label for="post-is-paid" style="margin:0;cursor:pointer">¿Es contenido de pago? (se solicitará compra por WhatsApp)</label>
+          </div>
+
+          <div class="field" id="field-price" style="display:none">
+            <label for="post-price">Valor en COP (sin puntos ni signos)</label>
+            <input id="post-price" type="number" min="0" step="1000" placeholder="Ej: 45000">
           </div>
 
           <div class="field">

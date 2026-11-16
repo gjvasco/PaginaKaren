@@ -573,6 +573,8 @@ h3 {
   color: #fff;
   display: flex;
   align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
   padding: 16px;
   position: relative;
   background-size: cover;
@@ -584,6 +586,15 @@ h3 {
   color: #fff;
   font-size: 12px;
   font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.blog-price-badge {
+  background: #fff;
+  color: var(--teal);
+  font-size: 12px;
+  font-weight: 700;
   padding: 4px 10px;
   border-radius: 999px;
 }
@@ -674,6 +685,47 @@ h3 {
   margin-top: 16px;
   background: #000;
   max-height: 460px;
+}
+
+.yt-frame {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%;
+  margin-top: 16px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #000;
+}
+
+.yt-frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.paid-box {
+  margin-top: 16px;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--teal);
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.paid-box strong {
+  color: var(--teal);
+  font-size: 16px;
+}
+
+.paid-box p {
+  color: var(--muted);
+  font-size: 14px;
 }
 
 .ig-wrap {

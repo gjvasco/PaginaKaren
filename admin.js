@@ -29,6 +29,12 @@ function toggleKindFields() {
   const kind = $("#post-kind").value;
   $("#field-video-file").style.display = kind === "video_archivo" ? "block" : "none";
   $("#field-ig-url").style.display = kind === "video_instagram" ? "block" : "none";
+  $("#field-yt-url").style.display = kind === "video_youtube" ? "block" : "none";
+}
+
+function togglePaidField() {
+  const isPaid = $("#post-is-paid").checked;
+  $("#field-price").style.display = isPaid ? "block" : "none";
 }
 
 async function uploadToBucket(file, folder) {
@@ -89,11 +95,14 @@ function resetForm() {
   editingPost = null;
   $("#post-form").reset();
   $("#post-id").value = "";
+  $("#post-is-paid").checked = false;
+  $("#post-price").value = "";
   $("#current-video-note").textContent = "";
   $("#current-cover-note").textContent = "";
   $("#btn-save").textContent = "Publicar";
   $("#btn-cancel-edit").classList.add("hidden");
   toggleKindFields();
+  togglePaidField();
 }
 
 function startEdit(post) {
@@ -105,12 +114,16 @@ function startEdit(post) {
   $("#post-summary").value = post.summary;
   $("#post-content").value = post.content || "";
   $("#post-ig-url").value = post.kind === "video_instagram" ? post.media_url : "";
+  $("#post-yt-url").value = post.kind === "video_youtube" ? post.media_url : "";
+  $("#post-is-paid").checked = Boolean(post.is_paid);
+  $("#post-price").value = post.price || "";
   $("#current-video-note").textContent =
     post.kind === "video_archivo" && post.media_url ? "Ya tiene un video cargado (sube otro solo si deseas reemplazarlo)." : "";
   $("#current-cover-note").textContent = post.cover_url ? "Ya tiene portada cargada." : "";
   $("#btn-save").textContent = "Guardar cambios";
   $("#btn-cancel-edit").classList.remove("hidden");
   toggleKindFields();
+  togglePaidField();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -134,6 +147,8 @@ async function handleSubmit(e) {
 
   try {
     const kind = $("#post-kind").value;
+    const isPaid = $("#post-is-paid").checked;
+    const price = isPaid ? Math.max(0, parseInt($("#post-price").value || "0", 10)) : 0;
     let mediaUrl = editingPost ? editingPost.media_url : "";
     let coverUrl = editingPost ? editingPost.cover_url : "";
 
@@ -146,12 +161,15 @@ async function handleSubmit(e) {
       const videoFile = $("#post-video-file").files[0];
       if (videoFile) {
         mediaUrl = await uploadToBucket(videoFile, "videos");
-      } else if (!mediaUrl) {
+      } else if (!mediaUrl && !isPaid) {
         throw new Error("Selecciona un archivo de video para subir.");
       }
     } else if (kind === "video_instagram") {
       mediaUrl = $("#post-ig-url").value.trim();
-      if (!mediaUrl) throw new Error("Pega el enlace de Instagram.");
+      if (!mediaUrl && !isPaid) throw new Error("Pega el enlace de Instagram.");
+    } else if (kind === "video_youtube") {
+      mediaUrl = isPaid ? "" : $("#post-yt-url").value.trim();
+      if (!mediaUrl && !isPaid) throw new Error("Pega el enlace de YouTube.");
     } else {
       mediaUrl = "";
     }
@@ -163,6 +181,8 @@ async function handleSubmit(e) {
       content: $("#post-content").value.trim(),
       media_url: mediaUrl,
       cover_url: coverUrl,
+      is_paid: isPaid,
+      price,
       published: true
     };
 
@@ -209,6 +229,7 @@ function init() {
   sb = window.supabase.createClient(cfg.url, cfg.anonKey);
 
   $("#post-kind").addEventListener("change", toggleKindFields);
+  $("#post-is-paid").addEventListener("change", togglePaidField);
   $("#btn-cancel-edit").addEventListener("click", resetForm);
   $("#post-form").addEventListener("submit", handleSubmit);
 
@@ -231,6 +252,7 @@ function init() {
   });
 
   toggleKindFields();
+  togglePaidField();
   checkSession();
 }
 

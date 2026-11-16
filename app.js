@@ -64,14 +64,43 @@ function formatDate(iso) {
 function kindLabel(kind) {
   if (kind === "escrito") return "Escrito";
   if (kind === "video_instagram") return "Video · Instagram";
+  if (kind === "video_youtube") return "Video · YouTube";
   return "Video propio";
+}
+
+function formatCOP(amount) {
+  if (!amount || Number(amount) <= 0) return "Contenido de pago";
+  return "$" + Number(amount).toLocaleString("es-CO") + " COP";
+}
+
+function getYoutubeEmbedUrl(url = "") {
+  try {
+    const u = new URL(url.trim());
+    let videoId = "";
+    if (u.hostname.includes("youtu.be")) {
+      videoId = u.pathname.replace(/^\/+/, "").split("/")[0];
+    } else if (u.pathname.startsWith("/shorts/")) {
+      videoId = u.pathname.split("/")[2] || "";
+    } else if (u.pathname.startsWith("/embed/")) {
+      videoId = u.pathname.split("/")[2] || "";
+    } else {
+      videoId = u.searchParams.get("v") || "";
+    }
+    return videoId ? `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}` : "";
+  } catch {
+    return "";
+  }
 }
 
 function matchesFilter(post) {
   if (state.filter === "todos") return true;
   if (state.filter === "escrito") return post.kind === "escrito";
   if (state.filter === "video") {
-    return post.kind === "video_archivo" || post.kind === "video_instagram";
+    return (
+      post.kind === "video_archivo" ||
+      post.kind === "video_instagram" ||
+      post.kind === "video_youtube"
+    );
   }
   return true;
 }
@@ -101,11 +130,19 @@ function renderBlog() {
       const coverStyle = p.cover_url
         ? `style="background-image:linear-gradient(to top, rgba(7,51,66,.75), rgba(7,51,66,.15)), url('${escapeHtml(p.cover_url)}')"`
         : "";
-      const btnText = p.kind === "escrito" ? "Leer escrito" : "Ver video";
+      const btnText = p.is_paid
+        ? "Ver acceso / comprar"
+        : p.kind === "escrito"
+          ? "Leer escrito"
+          : "Ver video";
+      const paidBadge = p.is_paid
+        ? `<span class="blog-price-badge">🔒 ${formatCOP(p.price)}</span>`
+        : "";
       return `
         <article class="blog-card">
           <div class="blog-cover" ${coverStyle}>
             <span class="blog-kind">${kindLabel(p.kind)}</span>
+            ${paidBadge}
           </div>
           <div class="blog-body">
             <span class="blog-date">${formatDate(p.created_at)}</span>
@@ -141,7 +178,23 @@ function openPostModal(id) {
   const body = $("#modal-body");
 
   let mediaHtml = "";
-  if (post.kind === "video_archivo" && post.media_url) {
+  if (post.is_paid) {
+    const waText = encodeURIComponent(
+      `Hola Karen, quiero adquirir el acceso a "${post.title}" (${formatCOP(post.price)}).`
+    );
+    mediaHtml = `
+      <div class="paid-box">
+        <strong>🔒 Contenido privado de pago · ${formatCOP(post.price)}</strong>
+        <p>Este material es exclusivo. Al realizar tu pago por WhatsApp, Karen habilitará tu acceso privado directamente.</p>
+        <a class="btn btn-primary" href="https://wa.me/573184444573?text=${waText}" target="_blank" rel="noopener">Adquirir acceso por WhatsApp</a>
+      </div>
+    `;
+  } else if (post.kind === "video_youtube" && post.media_url) {
+    const embedUrl = getYoutubeEmbedUrl(post.media_url);
+    mediaHtml = embedUrl
+      ? `<div class="yt-frame"><iframe src="${escapeHtml(embedUrl)}" title="${escapeHtml(post.title)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`
+      : `<div class="ig-wrap"><a class="btn btn-primary" href="${escapeHtml(post.media_url)}" target="_blank" rel="noopener">Ver video en YouTube</a></div>`;
+  } else if (post.kind === "video_archivo" && post.media_url) {
     mediaHtml = `
       <video class="video-player" controls playsinline preload="metadata">
         <source src="${escapeHtml(post.media_url)}">
@@ -178,7 +231,7 @@ function openPostModal(id) {
   modal.classList.remove("hidden");
   document.body.style.overflow = "hidden";
 
-  if (post.kind === "video_instagram") {
+  if (post.kind === "video_instagram" && !post.is_paid) {
     ensureInstagramEmbedScript();
   }
 }

@@ -3,14 +3,23 @@
 create table if not exists public.blog_posts (
   id uuid default gen_random_uuid() primary key,
   title text not null,
-  kind text not null check (kind in ('escrito', 'video_archivo', 'video_instagram')),
+  kind text not null check (kind in ('escrito', 'video_archivo', 'video_instagram', 'video_youtube')),
   summary text not null default '',
   content text not null default '',
   media_url text not null default '',
   cover_url text not null default '',
+  is_paid boolean not null default false,
+  price integer not null default 0,
   published boolean not null default true,
   created_at timestamptz not null default now()
 );
+
+-- Si ya habías creado la tabla antes, estas líneas la actualizan sin perder datos:
+alter table public.blog_posts drop constraint if exists blog_posts_kind_check;
+alter table public.blog_posts add constraint blog_posts_kind_check
+  check (kind in ('escrito', 'video_archivo', 'video_instagram', 'video_youtube'));
+alter table public.blog_posts add column if not exists is_paid boolean not null default false;
+alter table public.blog_posts add column if not exists price integer not null default 0;
 
 -- 2. Habilitar seguridad por filas (RLS)
 alter table public.blog_posts enable row level security;
