@@ -48,6 +48,17 @@ function escapeHtml(str = "") {
     .replace(/'/g, "&#39;");
 }
 
+// Devuelve la URL solo si es https (o http en localhost); si no, cadena vacía.
+function safeUrl(url = "") {
+  try {
+    const u = new URL(String(url).trim());
+    if (u.protocol !== "https:" && !(u.protocol === "http:" && u.hostname === "localhost")) return "";
+    return u.href.replace(/'/g, "%27").replace(/\(/g, "%28").replace(/\)/g, "%29");
+  } catch {
+    return "";
+  }
+}
+
 function formatDate(iso) {
   if (!iso) return "";
   try {
@@ -127,8 +138,9 @@ function renderBlog() {
 
   grid.innerHTML = filtered
     .map((p) => {
-      const coverStyle = p.cover_url
-        ? `style="background-image:linear-gradient(to top, rgba(7,51,66,.75), rgba(7,51,66,.15)), url('${escapeHtml(p.cover_url)}')"`
+      const coverSafe = safeUrl(p.cover_url);
+      const coverStyle = coverSafe
+        ? `style="background-image:linear-gradient(to top, rgba(7,51,66,.75), rgba(7,51,66,.15)), url('${escapeHtml(coverSafe)}')"`
         : "";
       const btnText = p.is_paid
         ? "Ver acceso / comprar"
@@ -193,11 +205,11 @@ function openPostModal(id) {
     const embedUrl = getYoutubeEmbedUrl(post.media_url);
     mediaHtml = embedUrl
       ? `<div class="yt-frame"><iframe src="${escapeHtml(embedUrl)}" title="${escapeHtml(post.title)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`
-      : `<div class="ig-wrap"><a class="btn btn-primary" href="${escapeHtml(post.media_url)}" target="_blank" rel="noopener">Ver video en YouTube</a></div>`;
+      : `<div class="ig-wrap"><a class="btn btn-primary" href="${escapeHtml(safeUrl(post.media_url))}" target="_blank" rel="noopener">Ver video en YouTube</a></div>`;
   } else if (post.kind === "video_archivo" && post.media_url) {
     mediaHtml = `
       <video class="video-player" controls playsinline preload="metadata">
-        <source src="${escapeHtml(post.media_url)}">
+        <source src="${escapeHtml(safeUrl(post.media_url))}">
         Tu navegador no soporta la reproducción de video.
       </video>
     `;
@@ -210,7 +222,7 @@ function openPostModal(id) {
             ? `<blockquote class="instagram-media" data-instgrm-permalink="${escapeHtml(post.media_url)}" data-instgrm-version="14" style="width:100%;max-width:540px;"></blockquote>`
             : ""
         }
-        <a class="btn btn-primary" href="${escapeHtml(post.media_url)}" target="_blank" rel="noopener">Abrir en Instagram</a>
+        <a class="btn btn-primary" href="${escapeHtml(safeUrl(post.media_url))}" target="_blank" rel="noopener">Abrir en Instagram</a>
       </div>
     `;
   }
@@ -220,8 +232,8 @@ function openPostModal(id) {
     <h2 id="modal-title">${escapeHtml(post.title)}</h2>
     <p class="blog-date">${formatDate(post.created_at)}</p>
     ${
-      post.cover_url && post.kind === "escrito"
-        ? `<img src="${escapeHtml(post.cover_url)}" alt="${escapeHtml(post.title)}" style="border-radius:14px;margin-top:14px;max-height:320px;width:100%;object-fit:cover;">`
+      safeUrl(post.cover_url) && post.kind === "escrito"
+        ? `<img src="${escapeHtml(safeUrl(post.cover_url))}" alt="${escapeHtml(post.title)}" style="border-radius:14px;margin-top:14px;max-height:320px;width:100%;object-fit:cover;">`
         : ""
     }
     ${mediaHtml}

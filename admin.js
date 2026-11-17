@@ -127,15 +127,31 @@ function startEdit(post) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+function storagePathFromUrl(url = "") {
+  const marker = `/storage/v1/object/public/${bucket}/`;
+  const i = url.indexOf(marker);
+  return i === -1 ? "" : decodeURIComponent(url.slice(i + marker.length));
+}
+
 async function deletePost(id) {
   if (!confirm("¿Seguro que quieres eliminar esta publicación?")) return;
+  const { data: old } = await sb.from("blog_posts").select("media_url,cover_url").eq("id", id).single();
   const { error } = await sb.from("blog_posts").delete().eq("id", id);
   if (error) {
     showMsg("No se pudo eliminar: " + error.message, true);
     return;
   }
+  const paths = [old?.media_url, old?.cover_url].map(storagePathFromUrl).filter(Boolean);
+  if (paths.length) await sb.storage.from(bucket).remove(paths);
   showMsg("Publicación eliminada.");
   loadPosts();
+}
+
+function requireHttps(url, label) {
+  if (!url) return;
+  let u;
+  try { u = new URL(url); } catch { throw new Error(`El enlace de ${label} no es válido.`); }
+  if (u.protocol !== "https:") throw new Error(`El enlace de ${label} debe empezar por https://`);
 }
 
 async function handleSubmit(e) {
@@ -157,7 +173,13 @@ async function handleSubmit(e) {
       coverUrl = await uploadToBucket(coverFile, "covers");
     }
 
-    if (kind === "video_archivo") {
+    if (isPaid && kind !== "escrito") {
+      // Seguridad: los medios de pago no se guardan en la tabla pública.
+      if ($("#post-video-file").files[0]) {
+        throw new Error("Los videos de pago no deben subirse al bucket público. Entrégalos por YouTube privado/oculto vía WhatsApp.");
+      }
+      mediaUrl = "";
+    } else if (kind === "video_archivo") {
       const videoFile = $("#post-video-file").files[0];
       if (videoFile) {
         mediaUrl = await uploadToBucket(videoFile, "videos");
@@ -166,9 +188,11 @@ async function handleSubmit(e) {
       }
     } else if (kind === "video_instagram") {
       mediaUrl = $("#post-ig-url").value.trim();
+      requireHttps(mediaUrl, "Instagram");
       if (!mediaUrl && !isPaid) throw new Error("Pega el enlace de Instagram.");
     } else if (kind === "video_youtube") {
       mediaUrl = isPaid ? "" : $("#post-yt-url").value.trim();
+      requireHttps(mediaUrl, "YouTube");
       if (!mediaUrl && !isPaid) throw new Error("Pega el enlace de YouTube.");
     } else {
       mediaUrl = "";
