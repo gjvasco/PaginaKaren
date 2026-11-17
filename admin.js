@@ -221,7 +221,11 @@ async function checkSession() {
 }
 
 function init() {
-  if (!cfg.url || !cfg.anonKey || !window.supabase) {
+  if (!window.supabase) {
+    showMsg("No se pudo cargar la librería de Supabase (revisa tu conexión a internet).", true);
+    return;
+  }
+  if (!cfg.url || !cfg.anonKey) {
     $("#setup-warning").classList.remove("hidden");
     return;
   }
