@@ -5,7 +5,7 @@
 // 4. Copia tu Project URL y anon public key aquí abajo:
 
 window.SUPABASE_CONFIG = {
-  url: "", // Ej: "https://tuproyecto.supabase.co"
-  anonKey: "", // Ej: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  url: "https://sgyzacnegjuccflqedoh.supabase.co",
+  anonKey: "sb_publishable_O3zuq5hradmEXycjQG11zw__5fPhZ6I",
   bucket: "blog-media"
 };
